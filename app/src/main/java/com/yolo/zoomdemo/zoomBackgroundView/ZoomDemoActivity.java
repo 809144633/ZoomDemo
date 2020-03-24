@@ -13,9 +13,11 @@ import com.yolo.zoomdemo.R;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/**
+ * 缩放的控件xml需设置 android:tag="zoom"
+ */
 public class ZoomDemoActivity extends AppCompatActivity {
-    private ZoomBackgroundView zbv;
+    private ZoomLayout zbv;
     private RecyclerView rv;
     private List<String> list = new ArrayList<>();
 
