@@ -27,18 +27,20 @@ public class ZoomLayout extends NestedScrollView {
     private final float MIN_SENSITIVITY = 0.1f;
 
     private boolean zoomEnable;
+
     //放大灵敏度
-    private float sensitivity;
+    private float zoomSensitivity;
+
+    //缩放对象
     private View zoomView;
+    //移动对象
     private View contentView;
+
     private int touchSlop;
 
     //最大偏移量
     private float maxOffset;
-    private float firstMargin = -1;
 
-    float interceptLastY;
-    float interceptCurY;
 
     public ZoomLayout(Context context) {
         this(context, null);
@@ -53,11 +55,11 @@ public class ZoomLayout extends NestedScrollView {
         if (attrs != null) {
             TypedArray array = getContext().obtainStyledAttributes(attrs, R.styleable.ZoomLayout);
             zoomEnable = array.getBoolean(R.styleable.ZoomLayout_zoom_enable, false);
-            sensitivity = array.getFloat(R.styleable.ZoomLayout_zoom_sensity, MIN_SENSITIVITY);
+            zoomSensitivity = array.getFloat(R.styleable.ZoomLayout_zoom_sensity, MIN_SENSITIVITY);
             maxOffset = array.getInteger(R.styleable.ZoomLayout_zoom_max_offset, 100);
             array.recycle();
         }
-        sensitivity = Math.min(MAX_SENSITIVITY, Math.max(sensitivity, MIN_SENSITIVITY));
+        zoomSensitivity = Math.min(MAX_SENSITIVITY, Math.max(zoomSensitivity, MIN_SENSITIVITY));
         touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
     }
 
@@ -88,83 +90,80 @@ public class ZoomLayout extends NestedScrollView {
         }
     }
 
-    private float curY;
-    private float lastY = -1;
+    private float curTouchY;
+    private float lastTouchY;
 
     //触碰滑动偏移量
     private float shiftOffset;
 
     private float zoomScale = 1f;
-    private int translateScale;
 
-    //记录位移控件的原始顶部位置
-    private int originTop = -1;
+    //记录位移控件的原始距离顶部位置
+    private int originTopMargin = -1;
 
     //判断是否缩放状态
     private boolean hasZoom = false;
     private ValueAnimator zoomAnimator;
     private ValueAnimator translateAnimator;
+    private MarginLayoutParams mlp;
 
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
-        if (originTop == -1) {
-            originTop = contentView.getTop();
+        if (!zoomEnable) {
+            return super.onTouchEvent(ev);
         }
-        curY = ev.getY();
-
-        switch (ev.getActionMasked()) {
+        curTouchY = ev.getY();
+        mlp = (MarginLayoutParams) contentView.getLayoutParams();
+        if (originTopMargin == -1) {
+            originTopMargin = mlp.topMargin;
+        }
+        switch (ev.getAction()) {
             case MotionEvent.ACTION_MOVE:
-                if (lastY == -1) {
-                    lastY = curY;
+                if (!isTouchPointInView(contentView, ev.getX(), ev.getY()) || !isTop()) {
+                    lastTouchY = curTouchY;
+                    return super.onTouchEvent(ev);
                 }
-                shiftOffset = curY - lastY;
-                if (shiftOffset > 0 && zoomEnable) {
-                    if (isTop() && isTouchPointInView(contentView, (int) ev.getX(), (int) ev.getY())) {
-                        hasZoom = true;
-                        MarginLayoutParams lp = (MarginLayoutParams) contentView.getLayoutParams();
-                        int topMargin = lp.topMargin;
-                        if (firstMargin == -1) {
-                            firstMargin = topMargin;
-                        }
-                        if (Math.abs(firstMargin - topMargin) <= maxOffset) {
-                            topMargin += translateScale;
-                            lp.setMargins(lp.leftMargin, topMargin, lp.rightMargin, lp.bottomMargin);
-                            contentView.setLayoutParams(lp);
+                shiftOffset = curTouchY - lastTouchY;
+                if (shiftOffset > 0 && Math.abs(originTopMargin - mlp.topMargin) <= maxOffset) {
+                    hasZoom = true;
 
-                            zoomScale += shiftOffset * sensitivity / 1000;
-                            zoomView.setScaleX(zoomScale);
-                            zoomView.setScaleY(zoomScale);
-                            translateScale = (int) (shiftOffset * sensitivity / 2 + 0.5f);
-                        }
+                    mlp.topMargin += (int) (shiftOffset * zoomSensitivity / 2 + 0.5f);
+                    mlp.setMargins(mlp.leftMargin, mlp.topMargin, mlp.rightMargin, mlp.bottomMargin);
+                    contentView.setLayoutParams(mlp);
 
-
-                    }
+                    zoomScale += shiftOffset * zoomSensitivity / 1000;
+                    zoomView.setScaleX(zoomScale);
+                    zoomView.setScaleY(zoomScale);
                 }
-                lastY = curY;
+                lastTouchY = curTouchY;
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                if (hasZoom && zoomEnable) {
-                    zoomAnimator = ValueAnimator.ofFloat(zoomScale, 1).setDuration(200);
-                    zoomAnimator.addUpdateListener((animation) -> {
-                        zoomScale = (float) animation.getAnimatedValue();
-                        zoomView.setScaleY(zoomScale);
-                        zoomView.setScaleX(zoomScale);
-                    });
-
-                    translateAnimator = ValueAnimator.ofInt(contentView.getTop(), originTop).setDuration(200);
-                    translateAnimator.addUpdateListener(animation -> {
-                        Integer topMargin = (Integer) animation.getAnimatedValue();
-                        MarginLayoutParams lp = (MarginLayoutParams) contentView.getLayoutParams();
-                        lp.setMargins(lp.leftMargin, topMargin, lp.rightMargin, lp.bottomMargin);
-                        contentView.setLayoutParams(lp);
-                    });
-
-                    zoomAnimator.start();
-                    translateAnimator.start();
-                    hasZoom = false;
+                if (!hasZoom) {
+                    return super.onTouchEvent(ev);
                 }
-                lastY = -1;
+                zoomAnimator = ValueAnimator.ofFloat(zoomScale, 1).setDuration(200);
+                zoomAnimator.addUpdateListener((animation) -> {
+                    zoomScale = (Float) animation.getAnimatedValue();
+                    zoomView.setScaleY(zoomScale);
+                    zoomView.setScaleX(zoomScale);
+                });
+
+                translateAnimator = ValueAnimator.ofInt(mlp.topMargin, originTopMargin).setDuration(200);
+                translateAnimator.addUpdateListener(animation -> {
+                    mlp.setMargins(
+                            mlp.leftMargin,
+                            (Integer) animation.getAnimatedValue(),
+                            mlp.rightMargin,
+                            mlp.bottomMargin);
+                    contentView.setLayoutParams(mlp);
+                });
+
+                zoomAnimator.start();
+                translateAnimator.start();
+                //复位
+                hasZoom = false;
+                originTopMargin = -1;
                 break;
             default:
         }
@@ -174,27 +173,39 @@ public class ZoomLayout extends NestedScrollView {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        if (zoomAnimator.isRunning()) {
-            zoomAnimator.cancel();
-            zoomAnimator.removeAllUpdateListeners();
-            zoomAnimator = null;
-        }
-        if (translateAnimator.isRunning()) {
-            translateAnimator.cancel();
-            translateAnimator.removeAllUpdateListeners();
-            translateAnimator = null;
+        removeAnimator(zoomAnimator);
+        removeAnimator(translateAnimator);
+    }
+
+    private void removeAnimator(ValueAnimator animator) {
+        if (animator != null && animator.isRunning()) {
+            animator.cancel();
+            animator.removeAllUpdateListeners();
+            animator = null;
         }
     }
+
+    private float interceptLastY;
+    private float interceptCurY;
+    private float interceptLastX;
+    private float interceptCurX;
+    private float interceptShiftX;
+    private float interceptShiftY;
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         switch (ev.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                lastTouchY = ev.getY();
                 interceptLastY = ev.getY();
+                interceptLastX = ev.getX();
                 break;
             case MotionEvent.ACTION_MOVE:
                 interceptCurY = ev.getY();
-                if (Math.abs(interceptCurY - interceptLastY) > touchSlop) {
+                interceptCurX = ev.getX();
+                interceptShiftX = Math.abs(interceptCurX - interceptLastX);
+                interceptShiftY = Math.abs(interceptCurY - interceptLastY);
+                if (interceptShiftY > interceptShiftX && interceptShiftY > touchSlop) {
                     return true;
                 }
             default:
@@ -205,12 +216,12 @@ public class ZoomLayout extends NestedScrollView {
     /**
      * 点击区域判断
      *
-     * @param view
-     * @param x
-     * @param y
-     * @return
+     * @param view 判断目标view
+     * @param x    触摸X轴
+     * @param y    触摸Y轴
+     * @return 是否在view内触摸
      */
-    private boolean isTouchPointInView(View view, int x, int y) {
+    private boolean isTouchPointInView(View view, float x, float y) {
         if (view == null) {
             return false;
         }
