@@ -3,6 +3,8 @@ package com.yolo.zoomdemo.zoomBackgroundView;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -31,11 +33,17 @@ public class ZoomDemoActivity extends AppCompatActivity {
         RvAdapter rvAdapter = new RvAdapter(this, list);
         rv.setAdapter(rvAdapter);
         rv.setLayoutManager(new LinearLayoutManager(this));
+        rvAdapter.setOnItemClickListener(new RvAdapter.onItemClickListener() {
+            @Override
+            public void onClick(View v, int position) {
+                Toast.makeText(ZoomDemoActivity.this, position + "", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void initlist() {
         for (int i = 0; i < 20; i++) {
-            list.add("填充数据");
+            list.add("填充数据" + i);
         }
     }
 

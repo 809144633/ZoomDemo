@@ -20,7 +20,7 @@ import com.yolo.zoomdemo.R;
  * 滑动位移对象需在xml中设置android:tag="content"标签
  */
 public class ZoomLayout extends NestedScrollView {
-
+    private static final String TAG = "ZoomLayout";
     public static final String ZOOM = "zoom";
     public static final String CONTENT = "content";
     private final float MAX_SENSITIVITY = 1f;
@@ -107,6 +107,7 @@ public class ZoomLayout extends NestedScrollView {
             originTop = contentView.getTop();
         }
         curY = ev.getY();
+
         switch (ev.getActionMasked()) {
             case MotionEvent.ACTION_MOVE:
                 if (lastY == 0) {
@@ -114,21 +115,28 @@ public class ZoomLayout extends NestedScrollView {
                 }
                 shiftOffset = curY - lastY;
                 if (shiftOffset > 0 && zoomEnable) {
+                    Log.e(TAG, "onTouchEvent: " + shiftOffset);
                     if (isTop() && isTouchPointInView(contentView, (int) ev.getX(), (int) ev.getY())) {
                         hasZoom = true;
                         zoomScale = (zoomScale + shiftOffset * sensitivity / 1000);
                         zoomView.setScaleX(zoomScale);
                         zoomView.setScaleY(zoomScale);
                         translateScale = (int) (shiftOffset * sensitivity / 2 + 0.5f);
-                        contentView.layout(
-                                contentView.getLeft(),
-                                contentView.getTop() + translateScale,
-                                contentView.getLeft() + contentView.getMeasuredWidth(),
-                                contentView.getBottom() + translateScale);
+                        MarginLayoutParams lp = (MarginLayoutParams) contentView.getLayoutParams();
+                        int topMargin = lp.topMargin;
+                        topMargin += translateScale;
+                        lp.setMargins(lp.leftMargin, topMargin, lp.rightMargin, lp.bottomMargin);
+                        contentView.setLayoutParams(lp);
+                        //使用layout移动位置会出现父容器越界被裁减的情况，采用margin移动
+//                        contentView.layout(
+//                                contentView.getLeft(),
+//                                contentView.getTop() + translateScale,
+//                                contentView.getLeft() + contentView.getMeasuredWidth(),
+//                                contentView.getBottom() + translateScale);
                     }
                 }
+                lastY = curY;
                 break;
-
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 if (hasZoom && zoomEnable) {
@@ -143,21 +151,28 @@ public class ZoomLayout extends NestedScrollView {
                         @Override
                         public void onAnimationUpdate(ValueAnimator animation) {
                             Integer scale = (Integer) animation.getAnimatedValue();
-                            contentView.layout(
-                                    contentView.getLeft(),
-                                    scale,
-                                    contentView.getLeft() + contentView.getMeasuredWidth(),
-                                    contentView.getBottom() - (contentView.getTop() - scale));
+                            MarginLayoutParams lp = (MarginLayoutParams) contentView.getLayoutParams();
+                            int topMargin;
+
+                            topMargin = scale;
+                            lp.setMargins(lp.leftMargin, topMargin, lp.rightMargin, lp.bottomMargin);
+                            contentView.setLayoutParams(lp);
+                            //使用layout移动位置会出现父容器越界被裁减的情况，采用margin移动
+//                            contentView.layout(
+//                                    contentView.getLeft(),
+//                                    scale,
+//                                    contentView.getLeft() + contentView.getMeasuredWidth(),
+//                                    contentView.getBottom() - (contentView.getTop() - scale));
                         }
                     });
                     zoomAnimator.start();
                     translateAnimator.start();
                     hasZoom = false;
                 }
+                lastY = 0;
                 break;
             default:
         }
-        lastY = curY;
         return super.onTouchEvent(ev);
     }
 
