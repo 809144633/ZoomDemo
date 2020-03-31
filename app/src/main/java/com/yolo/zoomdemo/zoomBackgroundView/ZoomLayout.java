@@ -26,7 +26,6 @@ public class ZoomLayout extends NestedScrollView {
     private final float MAX_SENSITIVITY = 1f;
     private final float MIN_SENSITIVITY = 0.1f;
 
-
     private boolean zoomEnable;
     //放大灵敏度
     private float sensitivity;
@@ -44,7 +43,7 @@ public class ZoomLayout extends NestedScrollView {
     int translateScale;
 
     //记录位移控件的原始顶部位置
-    private int originTop;
+    private int originTop = -1;
 
     //判断是否缩放状态
     boolean hasZoom = false;
@@ -68,13 +67,9 @@ public class ZoomLayout extends NestedScrollView {
             TypedArray array = getContext().obtainStyledAttributes(attrs, R.styleable.ZoomLayout);
             zoomEnable = array.getBoolean(R.styleable.ZoomLayout_zoom_enable, false);
             sensitivity = array.getFloat(R.styleable.ZoomLayout_zoom_sensity, MIN_SENSITIVITY);
-            if (sensitivity > MAX_SENSITIVITY) {
-                sensitivity = MAX_SENSITIVITY;
-            } else if (sensitivity < MIN_SENSITIVITY) {
-                sensitivity = MIN_SENSITIVITY;
-            }
             array.recycle();
         }
+        sensitivity = Math.min(MAX_SENSITIVITY, Math.max(sensitivity, MIN_SENSITIVITY));
         touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
     }
 
@@ -89,15 +84,17 @@ public class ZoomLayout extends NestedScrollView {
             int childCount = ((ViewGroup) view).getChildCount();
             for (int i = 0; i < childCount; i++) {
                 View childView = ((ViewGroup) view).getChildAt(i);
-                Object tag = childView.getTag();
+                String tag = (String) childView.getTag();
                 if (ZOOM.equals(tag) && zoomView == null) {
                     zoomView = childView;
                 }
                 if (CONTENT.equals(tag) && contentView == null) {
                     contentView = childView;
                 }
-                if (childView instanceof ViewGroup) {
-                    findChildTags(childView);
+                if (contentView == null || zoomView == null) {
+                    if (childView instanceof ViewGroup) {
+                        findChildTags(childView);
+                    }
                 }
             }
         }
@@ -106,7 +103,7 @@ public class ZoomLayout extends NestedScrollView {
 
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
-        if (originTop == 0) {
+        if (originTop == -1) {
             originTop = contentView.getTop();
         }
         curY = ev.getY();
@@ -123,6 +120,7 @@ public class ZoomLayout extends NestedScrollView {
                         zoomView.setScaleX(zoomScale);
                         zoomView.setScaleY(zoomScale);
                         translateScale = (int) (shiftOffset * sensitivity / 2 + 0.5f);
+
                         contentView.layout(
                                 contentView.getLeft(),
                                 contentView.getTop() + translateScale,
@@ -133,6 +131,7 @@ public class ZoomLayout extends NestedScrollView {
                 break;
 
             case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
                 if (hasZoom && zoomEnable) {
                     zoomAnimator = ValueAnimator.ofFloat(zoomScale, 1).setDuration(200);
                     zoomAnimator.addUpdateListener((animation) -> {
@@ -141,12 +140,18 @@ public class ZoomLayout extends NestedScrollView {
                         zoomView.setScaleX(zoomScale);
                     });
                     translateAnimator = ValueAnimator.ofInt(contentView.getTop(), originTop).setDuration(200);
-                    translateAnimator.addUpdateListener((animation) -> {
-                        contentView.layout(
-                                contentView.getLeft(),
-                                (Integer) animation.getAnimatedValue(),
-                                contentView.getLeft() + contentView.getMeasuredWidth(),
-                                contentView.getBottom() - (contentView.getTop() - (Integer) animation.getAnimatedValue()));
+                    translateAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                        @Override
+                        public void onAnimationUpdate(ValueAnimator animation) {
+                            Integer scale = (Integer) animation.getAnimatedValue();
+                            contentView.setTranslationY(scale);
+
+                            contentView.layout(
+                                    contentView.getLeft(),
+                                    scale,
+                                    contentView.getLeft() + contentView.getMeasuredWidth(),
+                                    contentView.getBottom() - (contentView.getTop() - scale));
+                        }
                     });
                     zoomAnimator.start();
                     translateAnimator.start();
@@ -190,6 +195,14 @@ public class ZoomLayout extends NestedScrollView {
         return super.onInterceptTouchEvent(ev);
     }
 
+    /**
+     * 点击区域判断
+     *
+     * @param view
+     * @param x
+     * @param y
+     * @return
+     */
     private boolean isTouchPointInView(View view, int x, int y) {
         if (view == null) {
             return false;
