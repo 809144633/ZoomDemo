@@ -33,22 +33,9 @@ public class ZoomLayout extends NestedScrollView {
     private View contentView;
     private int touchSlop;
 
-    float curY;
-    float lastY;
-
-    //触碰滑动偏移量
-    float shiftOffset;
-
-    float zoomScale = 1f;
-    int translateScale;
-
-    //记录位移控件的原始顶部位置
-    private int originTop = -1;
-
-    //判断是否缩放状态
-    boolean hasZoom = false;
-    ValueAnimator zoomAnimator;
-    ValueAnimator translateAnimator;
+    //最大偏移量
+    private float maxOffset;
+    private float firstMargin = -1;
 
     float interceptLastY;
     float interceptCurY;
@@ -67,6 +54,7 @@ public class ZoomLayout extends NestedScrollView {
             TypedArray array = getContext().obtainStyledAttributes(attrs, R.styleable.ZoomLayout);
             zoomEnable = array.getBoolean(R.styleable.ZoomLayout_zoom_enable, false);
             sensitivity = array.getFloat(R.styleable.ZoomLayout_zoom_sensity, MIN_SENSITIVITY);
+            maxOffset = array.getInteger(R.styleable.ZoomLayout_zoom_max_offset, 100);
             array.recycle();
         }
         sensitivity = Math.min(MAX_SENSITIVITY, Math.max(sensitivity, MIN_SENSITIVITY));
@@ -100,6 +88,22 @@ public class ZoomLayout extends NestedScrollView {
         }
     }
 
+    private float curY;
+    private float lastY = -1;
+
+    //触碰滑动偏移量
+    private float shiftOffset;
+
+    private float zoomScale = 1f;
+    private int translateScale;
+
+    //记录位移控件的原始顶部位置
+    private int originTop = -1;
+
+    //判断是否缩放状态
+    private boolean hasZoom = false;
+    private ValueAnimator zoomAnimator;
+    private ValueAnimator translateAnimator;
 
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
@@ -110,23 +114,30 @@ public class ZoomLayout extends NestedScrollView {
 
         switch (ev.getActionMasked()) {
             case MotionEvent.ACTION_MOVE:
-                if (lastY == 0) {
+                if (lastY == -1) {
                     lastY = curY;
                 }
                 shiftOffset = curY - lastY;
                 if (shiftOffset > 0 && zoomEnable) {
-                    Log.e(TAG, "onTouchEvent: " + shiftOffset);
                     if (isTop() && isTouchPointInView(contentView, (int) ev.getX(), (int) ev.getY())) {
                         hasZoom = true;
-                        zoomScale = (zoomScale + shiftOffset * sensitivity / 1000);
-                        zoomView.setScaleX(zoomScale);
-                        zoomView.setScaleY(zoomScale);
-                        translateScale = (int) (shiftOffset * sensitivity / 2 + 0.5f);
                         MarginLayoutParams lp = (MarginLayoutParams) contentView.getLayoutParams();
                         int topMargin = lp.topMargin;
-                        topMargin += translateScale;
-                        lp.setMargins(lp.leftMargin, topMargin, lp.rightMargin, lp.bottomMargin);
-                        contentView.setLayoutParams(lp);
+                        if (firstMargin == -1) {
+                            firstMargin = topMargin;
+                        }
+                        if (Math.abs(firstMargin - topMargin) <= maxOffset) {
+                            topMargin += translateScale;
+                            lp.setMargins(lp.leftMargin, topMargin, lp.rightMargin, lp.bottomMargin);
+                            contentView.setLayoutParams(lp);
+
+                            zoomScale += shiftOffset * sensitivity / 1000;
+                            zoomView.setScaleX(zoomScale);
+                            zoomView.setScaleY(zoomScale);
+                            translateScale = (int) (shiftOffset * sensitivity / 2 + 0.5f);
+                        }
+
+
                     }
                 }
                 lastY = curY;
@@ -140,21 +151,20 @@ public class ZoomLayout extends NestedScrollView {
                         zoomView.setScaleY(zoomScale);
                         zoomView.setScaleX(zoomScale);
                     });
+
                     translateAnimator = ValueAnimator.ofInt(contentView.getTop(), originTop).setDuration(200);
-                    translateAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                        @Override
-                        public void onAnimationUpdate(ValueAnimator animation) {
-                            Integer topMargin = (Integer) animation.getAnimatedValue();
-                            MarginLayoutParams lp = (MarginLayoutParams) contentView.getLayoutParams();
-                            lp.setMargins(lp.leftMargin, topMargin, lp.rightMargin, lp.bottomMargin);
-                            contentView.setLayoutParams(lp);
-                        }
+                    translateAnimator.addUpdateListener(animation -> {
+                        Integer topMargin = (Integer) animation.getAnimatedValue();
+                        MarginLayoutParams lp = (MarginLayoutParams) contentView.getLayoutParams();
+                        lp.setMargins(lp.leftMargin, topMargin, lp.rightMargin, lp.bottomMargin);
+                        contentView.setLayoutParams(lp);
                     });
+
                     zoomAnimator.start();
                     translateAnimator.start();
                     hasZoom = false;
                 }
-                lastY = 0;
+                lastY = -1;
                 break;
             default:
         }

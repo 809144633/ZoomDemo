@@ -11,5 +11,6 @@
     <declare-styleable name="ZoomLayout">
         <attr name="zoom_enable" format="boolean" />
         <attr name="zoom_sensity" format="float" />
+        <attr name="zoom_max_offset" format="integer" />
     </declare-styleable>
 </resources>
