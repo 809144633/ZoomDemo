@@ -120,7 +120,6 @@ public class ZoomLayout extends NestedScrollView {
                         zoomView.setScaleX(zoomScale);
                         zoomView.setScaleY(zoomScale);
                         translateScale = (int) (shiftOffset * sensitivity / 2 + 0.5f);
-
                         contentView.layout(
                                 contentView.getLeft(),
                                 contentView.getTop() + translateScale,
@@ -144,8 +143,6 @@ public class ZoomLayout extends NestedScrollView {
                         @Override
                         public void onAnimationUpdate(ValueAnimator animation) {
                             Integer scale = (Integer) animation.getAnimatedValue();
-                            contentView.setTranslationY(scale);
-
                             contentView.layout(
                                     contentView.getLeft(),
                                     scale,
