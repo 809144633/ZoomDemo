@@ -27,18 +27,18 @@ public class ZoomDemoActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_zoom_demo);
-        zbv = findViewById(R.id.zbv);
-        rv = findViewById(R.id.rv);
-        initlist();
-        RvAdapter rvAdapter = new RvAdapter(this, list);
-        rv.setAdapter(rvAdapter);
-        rv.setLayoutManager(new LinearLayoutManager(this));
-        rvAdapter.setOnItemClickListener(new RvAdapter.onItemClickListener() {
-            @Override
-            public void onClick(View v, int position) {
-                Toast.makeText(ZoomDemoActivity.this, position + "", Toast.LENGTH_SHORT).show();
-            }
-        });
+//        zbv = findViewById(R.id.zbv);
+//        rv = findViewById(R.id.rv);
+//        initlist();
+//        RvAdapter rvAdapter = new RvAdapter(this, list);
+//        rv.setAdapter(rvAdapter);
+//        rv.setLayoutManager(new LinearLayoutManager(this));
+//        rvAdapter.setOnItemClickListener(new RvAdapter.onItemClickListener() {
+//            @Override
+//            public void onClick(View v, int position) {
+//                Toast.makeText(ZoomDemoActivity.this, position + "", Toast.LENGTH_SHORT).show();
+//            }
+//        });
     }
 
     private void initlist() {

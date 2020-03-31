@@ -1,0 +1,8 @@
+<resources>
+    <declare-styleable name="ZoomLayout_Layout">
+        <attr name="zoom_tag">
+            <enum name="zoom" value="0" />
+            <enum name="content" value="1" />
+        </attr>
+    </declare-styleable>
+</resources>

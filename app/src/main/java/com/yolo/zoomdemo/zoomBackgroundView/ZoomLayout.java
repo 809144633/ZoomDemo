@@ -84,6 +84,10 @@ public class ZoomLayout extends NestedScrollView {
             int childCount = ((ViewGroup) view).getChildCount();
             for (int i = 0; i < childCount; i++) {
                 View childView = ((ViewGroup) view).getChildAt(i);
+                if (childView.getLayoutParams() instanceof  ZoomLayoutParams){
+                    ZoomLayoutParams layoutParams = (ZoomLayoutParams) childView.getLayoutParams();
+                    System.out.println(layoutParams.tag+"adf");
+                }
                 String tag = (String) childView.getTag();
                 if (ZOOM.equals(tag) && zoomView == null) {
                     zoomView = childView;
@@ -230,5 +234,47 @@ public class ZoomLayout extends NestedScrollView {
 
     private boolean isTop() {
         return getScrollY() == 0;
+    }
+
+    @Override
+    public LayoutParams generateLayoutParams(AttributeSet attrs) {
+        return new ZoomLayout.ZoomLayoutParams(getContext(), attrs);
+    }
+
+    @Override
+    protected ViewGroup.LayoutParams generateLayoutParams(ViewGroup.LayoutParams lp) {
+        return new ZoomLayout.ZoomLayoutParams(lp);
+    }
+
+    @Override
+    protected LayoutParams generateDefaultLayoutParams() {
+        return new ZoomLayout.ZoomLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+    }
+
+    @Override
+    protected boolean checkLayoutParams(ViewGroup.LayoutParams p) {
+        return p instanceof ZoomLayout.ZoomLayoutParams;
+    }
+
+    public static class ZoomLayoutParams extends LayoutParams {
+        public String tag;
+        public static final String TAG_ZOOM = "0";//缩放目标
+        public static final String TAG_CONTENT = "1";//移动内容目标
+
+        ZoomLayoutParams(Context c, AttributeSet attrs) {
+            super(c, attrs);
+            TypedArray typedArray = c.obtainStyledAttributes(attrs, R.styleable.ZoomLayout_Layout);
+            tag = typedArray.getString(R.styleable.ZoomLayout_Layout_zoom_tag);
+            typedArray.recycle();
+        }
+
+        ZoomLayoutParams(int width, int height) {
+            super(width, height);
+        }
+
+        ZoomLayoutParams(ViewGroup.LayoutParams source) {
+            super(source);
+        }
+
     }
 }
