@@ -127,12 +127,6 @@ public class ZoomLayout extends NestedScrollView {
                         topMargin += translateScale;
                         lp.setMargins(lp.leftMargin, topMargin, lp.rightMargin, lp.bottomMargin);
                         contentView.setLayoutParams(lp);
-                        //使用layout移动位置会出现父容器越界被裁减的情况，采用margin移动
-//                        contentView.layout(
-//                                contentView.getLeft(),
-//                                contentView.getTop() + translateScale,
-//                                contentView.getLeft() + contentView.getMeasuredWidth(),
-//                                contentView.getBottom() + translateScale);
                     }
                 }
                 lastY = curY;
@@ -150,19 +144,10 @@ public class ZoomLayout extends NestedScrollView {
                     translateAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                         @Override
                         public void onAnimationUpdate(ValueAnimator animation) {
-                            Integer scale = (Integer) animation.getAnimatedValue();
+                            Integer topMargin = (Integer) animation.getAnimatedValue();
                             MarginLayoutParams lp = (MarginLayoutParams) contentView.getLayoutParams();
-                            int topMargin;
-
-                            topMargin = scale;
                             lp.setMargins(lp.leftMargin, topMargin, lp.rightMargin, lp.bottomMargin);
                             contentView.setLayoutParams(lp);
-                            //使用layout移动位置会出现父容器越界被裁减的情况，采用margin移动
-//                            contentView.layout(
-//                                    contentView.getLeft(),
-//                                    scale,
-//                                    contentView.getLeft() + contentView.getMeasuredWidth(),
-//                                    contentView.getBottom() - (contentView.getTop() - scale));
                         }
                     });
                     zoomAnimator.start();
