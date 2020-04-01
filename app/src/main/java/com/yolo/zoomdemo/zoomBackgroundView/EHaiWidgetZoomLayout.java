@@ -53,7 +53,7 @@ public class EHaiWidgetZoomLayout extends NestedScrollView {
         super(context, attrs, defStyleAttr);
         if (attrs != null) {
             TypedArray array = getContext().obtainStyledAttributes(attrs, R.styleable.EHaiWidgetZoomLayout);
-            zoomEnable = array.getBoolean(R.styleable.EHaiWidgetZoomLayout_zoom_enable, false);
+            zoomEnable = array.getBoolean(R.styleable.EHaiWidgetZoomLayout_zoom_enable, true);
             zoomSensitivity = array.getFloat(R.styleable.EHaiWidgetZoomLayout_zoom_sensitivity, MIN_SENSITIVITY);
             maxOffset = array.getInteger(R.styleable.EHaiWidgetZoomLayout_zoom_max_offset, 100);
             array.recycle();
