@@ -4,7 +4,6 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -19,7 +18,7 @@ import com.yolo.zoomdemo.R;
  * 缩放对象需在xml中设置android:tag="zoom"标签
  * 滑动位移对象需在xml中设置android:tag="content"标签
  */
-public class ZoomLayout extends NestedScrollView {
+public class EHaiWidgetZoomLayout extends NestedScrollView {
     private static final String TAG = "ZoomLayout";
     public static final String ZOOM = "zoom";
     public static final String CONTENT = "content";
@@ -42,21 +41,21 @@ public class ZoomLayout extends NestedScrollView {
     private float maxOffset;
 
 
-    public ZoomLayout(Context context) {
+    public EHaiWidgetZoomLayout(Context context) {
         this(context, null);
     }
 
-    public ZoomLayout(Context context, AttributeSet attrs) {
+    public EHaiWidgetZoomLayout(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public ZoomLayout(Context context, AttributeSet attrs, int defStyleAttr) {
+    public EHaiWidgetZoomLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         if (attrs != null) {
-            TypedArray array = getContext().obtainStyledAttributes(attrs, R.styleable.ZoomLayout);
-            zoomEnable = array.getBoolean(R.styleable.ZoomLayout_zoom_enable, false);
-            zoomSensitivity = array.getFloat(R.styleable.ZoomLayout_zoom_sensity, MIN_SENSITIVITY);
-            maxOffset = array.getInteger(R.styleable.ZoomLayout_zoom_max_offset, 100);
+            TypedArray array = getContext().obtainStyledAttributes(attrs, R.styleable.EHaiWidgetZoomLayout);
+            zoomEnable = array.getBoolean(R.styleable.EHaiWidgetZoomLayout_zoom_enable, false);
+            zoomSensitivity = array.getFloat(R.styleable.EHaiWidgetZoomLayout_zoom_sensitivity, MIN_SENSITIVITY);
+            maxOffset = array.getInteger(R.styleable.EHaiWidgetZoomLayout_zoom_max_offset, 100);
             array.recycle();
         }
         zoomSensitivity = Math.min(MAX_SENSITIVITY, Math.max(zoomSensitivity, MIN_SENSITIVITY));
@@ -109,7 +108,7 @@ public class ZoomLayout extends NestedScrollView {
 
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
-        if (!zoomEnable) {
+        if (!zoomEnable || zoomView == null || contentView == null) {
             return super.onTouchEvent(ev);
         }
         curTouchY = ev.getY();
@@ -143,27 +142,32 @@ public class ZoomLayout extends NestedScrollView {
                     return super.onTouchEvent(ev);
                 }
                 zoomAnimator = ValueAnimator.ofFloat(zoomScale, 1).setDuration(200);
-                zoomAnimator.addUpdateListener((animation) -> {
-                    zoomScale = (Float) animation.getAnimatedValue();
-                    zoomView.setScaleY(zoomScale);
-                    zoomView.setScaleX(zoomScale);
+                zoomAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                    @Override
+                    public void onAnimationUpdate(ValueAnimator animation) {
+                        zoomScale = (Float) animation.getAnimatedValue();
+                        zoomView.setScaleY(zoomScale);
+                        zoomView.setScaleX(zoomScale);
+                    }
                 });
 
                 translateAnimator = ValueAnimator.ofInt(mlp.topMargin, originTopMargin).setDuration(200);
-                translateAnimator.addUpdateListener(animation -> {
-                    mlp.setMargins(
-                            mlp.leftMargin,
-                            (Integer) animation.getAnimatedValue(),
-                            mlp.rightMargin,
-                            mlp.bottomMargin);
-                    contentView.setLayoutParams(mlp);
+                translateAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                    @Override
+                    public void onAnimationUpdate(ValueAnimator animation) {
+                        mlp.setMargins(
+                                mlp.leftMargin,
+                                (Integer) animation.getAnimatedValue(),
+                                mlp.rightMargin,
+                                mlp.bottomMargin);
+                        contentView.setLayoutParams(mlp);
+                    }
                 });
 
                 zoomAnimator.start();
                 translateAnimator.start();
                 //复位
                 hasZoom = false;
-                originTopMargin = -1;
                 break;
             default:
         }
@@ -211,6 +215,12 @@ public class ZoomLayout extends NestedScrollView {
             default:
         }
         return super.onInterceptTouchEvent(ev);
+    }
+
+    public void refreshMargin() {
+        if (originTopMargin != -1) {
+            originTopMargin = -1;
+        }
     }
 
     /**

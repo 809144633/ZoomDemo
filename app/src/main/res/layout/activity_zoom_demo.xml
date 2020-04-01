@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.yolo.zoomdemo.zoomBackgroundView.ZoomLayout
+    <com.yolo.zoomdemo.zoomBackgroundView.EHaiWidgetZoomLayout
         android:id="@+id/zbv"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -14,12 +14,11 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:zoom_enable="true"
-        app:zoom_sensity="0.3">
+        app:zoom_sensitivity="0.3">
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="bottom">
+            android:layout_height="wrap_content">
 
             <ImageView
                 android:layout_width="match_parent"
@@ -50,6 +49,6 @@
 
         </RelativeLayout>
 
-    </com.yolo.zoomdemo.zoomBackgroundView.ZoomLayout>
+    </com.yolo.zoomdemo.zoomBackgroundView.EHaiWidgetZoomLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

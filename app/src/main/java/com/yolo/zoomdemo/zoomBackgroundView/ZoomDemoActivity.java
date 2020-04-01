@@ -19,7 +19,7 @@ import java.util.List;
  * 缩放的控件xml需设置 android:tag="zoom"
  */
 public class ZoomDemoActivity extends AppCompatActivity {
-    private ZoomLayout zbv;
+    private EHaiWidgetZoomLayout zbv;
     private RecyclerView rv;
     private List<String> list = new ArrayList<>();
 
@@ -42,7 +42,7 @@ public class ZoomDemoActivity extends AppCompatActivity {
     }
 
     private void initlist() {
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 1; i++) {
             list.add("填充数据" + i);
         }
     }
