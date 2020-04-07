@@ -4,19 +4,21 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+
 import androidx.core.widget.NestedScrollView;
 
 import com.yolo.zoomdemo.R;
 
 /**
  * @author Administrator
- *         缩放对象需在xml中设置android:tag="zoom"标签
- *         可接受滑动的对象需在xml中设置android:tag="touch"标签
- *         滑动位移对象需在xml中设置android:tag="move"标签
+ * 缩放对象需在xml中设置android:tag="zoom"标签
+ * 可接受滑动的对象需在xml中设置android:tag="touch"标签
+ * 滑动位移对象需在xml中设置android:tag="move"标签
  */
 public class EHaiWidgetZoomLayout extends NestedScrollView {
 
@@ -56,7 +58,7 @@ public class EHaiWidgetZoomLayout extends NestedScrollView {
         if (attrs != null) {
             TypedArray array = getContext().obtainStyledAttributes(attrs, R.styleable.EHaiWidgetZoomLayout);
             zoomEnable = array.getBoolean(R.styleable.EHaiWidgetZoomLayout_zoom_enable, true);
-            zoomSensitivity = array.getFloat(R.styleable.EHaiWidgetZoomLayout_zoom_sensitivity, 0.3f);
+            zoomSensitivity = array.getFloat(R.styleable.EHaiWidgetZoomLayout_zoom_sensitivity, 0.35f);
             maxOffset = array.getInteger(R.styleable.EHaiWidgetZoomLayout_zoom_max_offset, 100);
             array.recycle();
         }
@@ -68,6 +70,13 @@ public class EHaiWidgetZoomLayout extends NestedScrollView {
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
         findChildTags(this);
+        //期望触摸对象与移动对象为同一对象
+        if (touchView == null) {
+            touchView = moveView;
+        }
+        if (moveView == null) {
+            moveView = touchView;
+        }
     }
 
     private void findChildTags(View view) {
@@ -118,36 +127,49 @@ public class EHaiWidgetZoomLayout extends NestedScrollView {
         if (!zoomEnable || zoomView == null || touchView == null || moveView == null) {
             return super.onTouchEvent(ev);
         }
-        curTouchY = ev.getY();
         mlp = (MarginLayoutParams) moveView.getLayoutParams();
         if (originTopMargin == -1) {
             originTopMargin = mlp.topMargin;
         }
         switch (ev.getAction()) {
             case MotionEvent.ACTION_MOVE:
+                curTouchY = ev.getY();
+                shiftOffset = curTouchY - lastTouchY;
+                lastTouchY = curTouchY;
                 if (!isTouchPointInView(touchView, ev.getX(), ev.getY()) || !isTop()) {
-                    lastTouchY = curTouchY;
                     return super.onTouchEvent(ev);
                 }
-                shiftOffset = curTouchY - lastTouchY;
-                if (shiftOffset > 0 && Math.abs(originTopMargin - mlp.topMargin) <= maxOffset) {
-                    hasZoom = true;
 
-                    mlp.topMargin += (int) (shiftOffset * zoomSensitivity / 2 + 0.5f);
-                    mlp.setMargins(mlp.leftMargin, mlp.topMargin, mlp.rightMargin, mlp.bottomMargin);
-                    moveView.setLayoutParams(mlp);
-
-                    zoomScale += shiftOffset * zoomSensitivity / 1000;
-                    zoomView.setScaleX(zoomScale);
-                    zoomView.setScaleY(zoomScale);
+                if (!hasZoom && shiftOffset < 0) {
+                    return super.onTouchEvent(ev);
                 }
-                lastTouchY = curTouchY;
-                break;
+
+                if (Math.abs(originTopMargin - mlp.topMargin) <= maxOffset || shiftOffset < 0) {
+                    hasZoom = true;
+                    mlp.topMargin += recountOffset(shiftOffset * zoomSensitivity / 2);
+                    zoomScale += shiftOffset * zoomSensitivity / 1000;
+                    if (zoomScale < 1 || mlp.topMargin < originTopMargin) {
+                        hasZoom = false;
+                        zoomScale = 1;
+                        setTransView(zoomView, zoomScale, moveView, originTopMargin);
+                        return super.onTouchEvent(ev);
+                    }
+                    setTransView(zoomView, zoomScale, moveView, mlp.topMargin);
+                }
+
+                if (!hasZoom) {
+                    return super.onTouchEvent(ev);
+                } else {
+                    return false;
+                }
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 if (!hasZoom) {
                     return super.onTouchEvent(ev);
                 }
+                //复位
+                hasZoom = false;
+
                 zoomAnimator = ValueAnimator.ofFloat(zoomScale, 1).setDuration(200);
                 zoomAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                     @Override
@@ -173,12 +195,25 @@ public class EHaiWidgetZoomLayout extends NestedScrollView {
 
                 zoomAnimator.start();
                 translateAnimator.start();
-                //复位
-                hasZoom = false;
                 break;
             default:
         }
         return super.onTouchEvent(ev);
+    }
+
+    private int recountOffset(float f) {
+        if (f > 0) {
+            return (int) (f + 0.5f);
+        } else {
+            return (int) (f - 0.5f);
+        }
+    }
+
+    private void setTransView(View zoomView, float zoomScale, View moveView, int originTopMargin) {
+        zoomView.setScaleY(zoomScale);
+        zoomView.setScaleX(zoomScale);
+        mlp.setMargins(mlp.leftMargin, originTopMargin, mlp.rightMargin, mlp.bottomMargin);
+        moveView.setLayoutParams(mlp);
     }
 
     @Override
