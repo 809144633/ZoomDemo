@@ -1,16 +1,17 @@
-package com.yolo.zoomdemo.zoomBackgroundView;
+package com.yolo.zoomlayout;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+
 import androidx.core.widget.NestedScrollView;
 
-import com.yolo.zoomdemo.R;
 
 /**
  * @author Administrator
@@ -26,7 +27,7 @@ public class EHaiWidgetZoomLayout extends NestedScrollView {
     public static final String MOVE = "move";
     private static final float MAX_SENSITIVITY = 1f;
     private static final float MIN_SENSITIVITY = 0.1f;
-    private static final int ANIMATOR_DURATION = 200;
+
     private boolean zoomEnable;
 
     //放大灵敏度
@@ -42,15 +43,6 @@ public class EHaiWidgetZoomLayout extends NestedScrollView {
 
     //最大偏移量
     private float maxOffset;
-
-    private final ValueAnimator zoomAnimator;
-    private final ValueAnimator translateAnimator;
-
-    //缩放尺度
-    private float zoomScale = 1f;
-    //记录位移控件的原始距离顶部位置
-    private int originTopMargin = -1;
-    private MarginLayoutParams mlp;
 
     public EHaiWidgetZoomLayout(Context context) {
         this(context, null);
@@ -71,36 +63,6 @@ public class EHaiWidgetZoomLayout extends NestedScrollView {
         }
         zoomSensitivity = Math.min(MAX_SENSITIVITY, Math.max(zoomSensitivity, MIN_SENSITIVITY));
         touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
-
-        zoomAnimator = new ValueAnimator();
-        zoomAnimator.setDuration(ANIMATOR_DURATION);
-        zoomAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                zoomScale = (Float) animation.getAnimatedValue();
-                if (zoomView == null) {
-                    return;
-                }
-                zoomView.setScaleY(zoomScale);
-                zoomView.setScaleX(zoomScale);
-            }
-        });
-        translateAnimator = new ValueAnimator();
-        translateAnimator.setDuration(ANIMATOR_DURATION);
-        translateAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                if (moveView == null || mlp == null) {
-                    return;
-                }
-                mlp.setMargins(
-                        mlp.leftMargin,
-                        (Integer) animation.getAnimatedValue(),
-                        mlp.rightMargin,
-                        mlp.bottomMargin);
-                moveView.setLayoutParams(mlp);
-            }
-        });
     }
 
     @Override
@@ -117,31 +79,27 @@ public class EHaiWidgetZoomLayout extends NestedScrollView {
     }
 
     private void findChildTags(View view) {
-        if (!(view instanceof ViewGroup)) {
-            return;
-        }
-        int childCount = ((ViewGroup) view).getChildCount();
-        for (int i = 0; i < childCount; i++) {
-            View childView = ((ViewGroup) view).getChildAt(i);
-            //不使用强转，避免childView设置的tag无法强转为String
-            String tag = String.valueOf(childView.getTag());
-            if (zoomView == null && ZOOM.equals(tag)) {
-                zoomView = childView;
-            }
-            if (touchView == null && TOUCH.equals(tag)) {
-                touchView = childView;
-            }
-            if (moveView == null && MOVE.equals(tag)) {
-                moveView = childView;
-            }
-            if (zoomView != null && touchView != null && moveView != null) {
-                break;
-            }
-            if (childView instanceof ViewGroup) {
-                findChildTags(childView);
-            }
-            if (zoomView != null && touchView != null && moveView != null) {
-                break;
+        if (view instanceof ViewGroup) {
+            int childCount = ((ViewGroup) view).getChildCount();
+            for (int i = 0; i < childCount; i++) {
+                View childView = ((ViewGroup) view).getChildAt(i);
+                String tag = (String) childView.getTag();
+                if (zoomView == null && ZOOM.equals(tag)) {
+                    zoomView = childView;
+                }
+                if (touchView == null && TOUCH.equals(tag)) {
+                    touchView = childView;
+                }
+
+                if (moveView == null && MOVE.equals(tag)) {
+                    moveView = childView;
+                }
+
+                if (touchView == null || zoomView == null || moveView == null) {
+                    if (childView instanceof ViewGroup) {
+                        findChildTags(childView);
+                    }
+                }
             }
         }
     }
@@ -152,9 +110,16 @@ public class EHaiWidgetZoomLayout extends NestedScrollView {
     //触碰滑动偏移量
     private float shiftOffset;
 
+    private float zoomScale = 1f;
+
+    //记录位移控件的原始距离顶部位置
+    private int originTopMargin = -1;
 
     //判断是否缩放状态
     private boolean hasZoom = false;
+    private ValueAnimator zoomAnimator;
+    private ValueAnimator translateAnimator;
+    private MarginLayoutParams mlp;
 
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
@@ -180,14 +145,8 @@ public class EHaiWidgetZoomLayout extends NestedScrollView {
 
                 if (Math.abs(originTopMargin - mlp.topMargin) <= maxOffset || shiftOffset < 0) {
                     hasZoom = true;
-                    //上划不需要具备阻尼效果
-                    if (shiftOffset < 0) {
-                        mlp.topMargin += recountOffset(shiftOffset);
-                        zoomScale += shiftOffset / 500;
-                    } else {
-                        mlp.topMargin += recountOffset(shiftOffset * zoomSensitivity / 2);
-                        zoomScale += shiftOffset * zoomSensitivity / 1000;
-                    }
+                    mlp.topMargin += recountOffset(shiftOffset * zoomSensitivity / 2);
+                    zoomScale += shiftOffset * zoomSensitivity / 1000;
                     if (zoomScale < 1 || mlp.topMargin < originTopMargin) {
                         hasZoom = false;
                         zoomScale = 1;
@@ -209,9 +168,31 @@ public class EHaiWidgetZoomLayout extends NestedScrollView {
                 }
                 //复位
                 hasZoom = false;
-                zoomAnimator.setFloatValues(zoomScale, 1);
+
+                zoomAnimator = ValueAnimator.ofFloat(zoomScale, 1).setDuration(200);
+                zoomAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                    @Override
+                    public void onAnimationUpdate(ValueAnimator animation) {
+                        zoomScale = (Float) animation.getAnimatedValue();
+                        zoomView.setScaleY(zoomScale);
+                        zoomView.setScaleX(zoomScale);
+                    }
+                });
+
+                translateAnimator = ValueAnimator.ofInt(mlp.topMargin, originTopMargin).setDuration(200);
+                translateAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                    @Override
+                    public void onAnimationUpdate(ValueAnimator animation) {
+                        mlp.setMargins(
+                                mlp.leftMargin,
+                                (Integer) animation.getAnimatedValue(),
+                                mlp.rightMargin,
+                                mlp.bottomMargin);
+                        moveView.setLayoutParams(mlp);
+                    }
+                });
+
                 zoomAnimator.start();
-                translateAnimator.setIntValues(mlp.topMargin, originTopMargin);
                 translateAnimator.start();
                 break;
             default:
@@ -244,6 +225,8 @@ public class EHaiWidgetZoomLayout extends NestedScrollView {
     private void removeAnimator(ValueAnimator animator) {
         if (animator != null && animator.isRunning()) {
             animator.cancel();
+            animator.removeAllUpdateListeners();
+            animator = null;
         }
     }
 
