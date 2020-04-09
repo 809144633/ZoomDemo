@@ -1,4 +1,4 @@
-package com.yolo.zoomdemo.zoomBackgroundView;
+package com.yolo.zoomdemo;
 
 import android.content.Context;
 import android.content.Intent;
@@ -10,13 +10,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.yolo.zoomdemo.R;
+import com.yolo.zoomlayout.EHaiWidgetZoomLayout;
 
 import java.util.ArrayList;
 import java.util.List;
-
 /**
- * 缩放的控件xml需设置 android:tag="zoom"
+ * @author: 37745
+ * @date: 2020/4/9 13:40
+ * @desc: 缩放的控件xml需设置 android:tag="zoom"
  */
 public class ZoomDemoActivity extends AppCompatActivity {
     private EHaiWidgetZoomLayout zbv;

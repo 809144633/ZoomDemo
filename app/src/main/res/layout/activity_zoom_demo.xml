@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.yolo.zoomdemo.zoomBackgroundView.EHaiWidgetZoomLayout
+    <com.yolo.zoomlayout.EHaiWidgetZoomLayout
         android:id="@+id/zbv"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -25,9 +25,8 @@
                 android:layout_height="200dp"
                 android:background="@drawable/temp_bg"
                 android:scaleType="centerCrop"
-                android:tag="zoom"
                 android:src="@drawable/temp_bg"
-                 />
+                android:tag="zoom" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -50,5 +49,5 @@
 
 
         </RelativeLayout>
-    </com.yolo.zoomdemo.zoomBackgroundView.EHaiWidgetZoomLayout>
+    </com.yolo.zoomlayout.EHaiWidgetZoomLayout>
 </RelativeLayout>
