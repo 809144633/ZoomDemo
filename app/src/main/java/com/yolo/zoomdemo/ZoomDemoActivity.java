@@ -25,6 +25,7 @@ public class ZoomDemoActivity extends AppCompatActivity {
     private RecyclerView rv;
     private List<String> list = new ArrayList<>();
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
