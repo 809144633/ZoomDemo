@@ -10,7 +10,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.yolo.zoomlayout.EHaiWidgetZoomLayout;
+
+import com.yolo.zoomlayout.ZoomLayout;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +21,7 @@ import java.util.List;
  * @desc: 缩放的控件xml需设置 android:tag="zoom"
  */
 public class ZoomDemoActivity extends AppCompatActivity {
-    private EHaiWidgetZoomLayout zbv;
+    private ZoomLayout zbv;
     private RecyclerView rv;
     private List<String> list = new ArrayList<>();
 

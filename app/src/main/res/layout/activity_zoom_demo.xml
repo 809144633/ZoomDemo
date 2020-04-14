@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.yolo.zoomlayout.EHaiWidgetZoomLayout
+    <com.yolo.zoomlayout.ZoomLayout
         android:id="@+id/zbv"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -49,5 +49,5 @@
 
 
         </RelativeLayout>
-    </com.yolo.zoomlayout.EHaiWidgetZoomLayout>
+    </com.yolo.zoomlayout.ZoomLayout>
 </RelativeLayout>

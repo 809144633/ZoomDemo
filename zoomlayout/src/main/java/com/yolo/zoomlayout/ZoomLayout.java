@@ -16,7 +16,7 @@ import androidx.core.widget.NestedScrollView;
  * 可接受滑动的对象需在xml中设置android:tag="touch"标签
  * 滑动位移对象需在xml中设置android:tag="move"标签
  */
-public class EHaiWidgetZoomLayout extends NestedScrollView {
+public class ZoomLayout extends NestedScrollView {
 
     private static final String TAG = "ZoomLayout";
     public static final String ZOOM = "zoom";
@@ -50,21 +50,21 @@ public class EHaiWidgetZoomLayout extends NestedScrollView {
     private int originTopMargin = -1;
     private MarginLayoutParams mlp;
 
-    public EHaiWidgetZoomLayout(Context context) {
+    public ZoomLayout(Context context) {
         this(context, null);
     }
 
-    public EHaiWidgetZoomLayout(Context context, AttributeSet attrs) {
+    public ZoomLayout(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public EHaiWidgetZoomLayout(Context context, AttributeSet attrs, int defStyleAttr) {
+    public ZoomLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         if (attrs != null) {
-            TypedArray array = getContext().obtainStyledAttributes(attrs, R.styleable.EHaiWidgetZoomLayout);
-            zoomEnable = array.getBoolean(R.styleable.EHaiWidgetZoomLayout_zoom_enable, true);
-            zoomSensitivity = array.getFloat(R.styleable.EHaiWidgetZoomLayout_zoom_sensitivity, 0.35f);
-            maxOffset = array.getInteger(R.styleable.EHaiWidgetZoomLayout_zoom_max_offset, 100);
+            TypedArray array = getContext().obtainStyledAttributes(attrs, R.styleable.ZoomLayout);
+            zoomEnable = array.getBoolean(R.styleable.ZoomLayout_zoom_enable, true);
+            zoomSensitivity = array.getFloat(R.styleable.ZoomLayout_zoom_sensitivity, 0.35f);
+            maxOffset = array.getInteger(R.styleable.ZoomLayout_zoom_max_offset, 100);
             array.recycle();
         }
         zoomSensitivity = Math.min(MAX_SENSITIVITY, Math.max(zoomSensitivity, MIN_SENSITIVITY));

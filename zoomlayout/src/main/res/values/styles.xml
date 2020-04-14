@@ -1,5 +1,5 @@
 <resources>
-    <declare-styleable name="EHaiWidgetZoomLayout">
+    <declare-styleable name="ZoomLayout">
         <attr name="zoom_enable" format="boolean" />
         <attr name="zoom_sensitivity" format="float" />
         <attr name="zoom_max_offset" format="integer" />
