@@ -18,7 +18,7 @@ import java.util.List;
 /**
  * @author: 37745
  * @date: 2020/4/9 13:40
- * @desc: 缩放的控件xml需设置 android:tag="zoom"
+ * @desc:
  */
 public class ZoomDemoActivity extends AppCompatActivity {
     private ZoomLayout zbv;
